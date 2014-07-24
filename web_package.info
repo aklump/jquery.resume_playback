@@ -1,5 +1,5 @@
 name = "Resume Playback"
 description = "HTML5 Media Resume Playback (Playhead Position Memory)"
 homepage = http://www.intheloftstudios.com/packages/jquery/jquery.resume_playback
-version = 0.1.2
+version = 0.1.3
 author = Aaron Klump <sourcecode@intheloftstudios.com>
