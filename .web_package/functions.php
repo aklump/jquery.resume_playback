@@ -24,7 +24,7 @@ function js_replace_homepage(&$text, $homepage) {
 }
 
 function js_replace_version_function(&$source, $new_version) {
-  preg_replace("/(\$\.fn.+version.+')([\d-.]*)'')/", "${1}$new_version'", $source);
+  $source = preg_replace('/(\$\.fn.+version.+\')([\d-.]*)\'/', '${1}' . $new_version . "'", $source);
 }
 
 /**
