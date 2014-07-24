@@ -1,13 +1,13 @@
 /**
- * {{ name }} jQuery JavaScript Plugin v{{ version }}
- * {{ homepage }}
+ * Resume Playback jQuery JavaScript Plugin v0.1
+ * http://www.intheloftstudios.com/packages/jquery/jquery.resume_playback
  *
- * {{ description }}.
+ * HTML5 Media Resume Playback (Playhead Position Memory)
  *
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: {{ date }}
+ * Date: Wed Jul 23 18:28:15 PDT 2014
  */
 ;(function($, window, document, undefined) {
 "use strict";

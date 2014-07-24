@@ -9,7 +9,7 @@
  */
 
 //Here is the header required to use this script...
-/*
+/**
  * {{ name }} jQuery JavaScript Plugin v{{ version }}
  * {{ homepage }}
  *
@@ -42,7 +42,16 @@ $source = file_get_contents($source_file);
 
 // Pull out only comment lines for manipulation to protect code.
 preg_match_all("/(\/| )?\*.*$/m", $source, $matches);
-$comment_lines = $comment_lines_replace = $matches[0];
+
+// Find all of the header comment
+$comment_lines = array();
+foreach ($matches[0] as $line_value) {
+  $comment_lines[] = $line_value;
+  if (preg_match('/\s*\*\//', $line_value)) {
+    break;
+  }
+}
+$comment_lines_replace = $comment_lines;
 
 // Target each comment line based on convention
 js_replace_name_version($comment_lines_replace[1], $package_name, $new_version);
@@ -54,6 +63,9 @@ js_replace_date($comment_lines_replace[9], $date);
 $find     = implode(PHP_EOL, $comment_lines);
 $replace  = implode(PHP_EOL, $comment_lines_replace);
 $source   = str_replace($find, $replace, $source);
+
+// Replace the version function.
+js_replace_version_function($source, $new_version);
 
 // Save the new version of the file
 if (file_put_contents($source_file, $source)) {
