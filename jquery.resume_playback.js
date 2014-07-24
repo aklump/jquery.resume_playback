@@ -7,118 +7,24 @@
  * Copyright 2013, Aaron Klump
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Wed Jul 23 18:50:54 PDT 2014
+ * Date: Wed Jul 23 18:57:03 PDT 2014
  */
 ;(function($, window, document, undefined) {
 "use strict";
 
-// The actual plugin constructor
-function ResumePlayback(element, id, options) {
-  this.element = element;
-
-  // jQuery has an extend method that merges the 
-  // contents of two or more objects, storing the 
-  // result in the first object. The first object 
-  // is generally empty because we don't want to alter 
-  // the default options for future instances of the plugin
-  this.options = $.extend( {}, defaults, options) ;
-  
-  this._defaults = $.fn.resumePlayback.defaults;
-  // this._name = 'resumePlayback';
-  
-  this.init();
-
-  var nonceStorage = null;
-
-  // // Create some defaults, extending them with any options that were provided
-  // var settings = $.extend( {
-  //   'refresh'         : 1000,
-  //   'resuming'        : null,
-  //   'resumed'         : null,
-  //   'dataStore'       : dataStoreCookies,
-  //   'dataStoreKey'    : 'resumePlayback',
-  //   'dataLifetime'    : 365
-  // }, options);
-
-  /**
-   * Event handler for various video events: captures playhead position.
-   *
-   * @param  {object} e The event object.
-   */
-  this.element.bind('play seeked pause abort timeupdate', function (e) {
-    var nonce = e.target.currentTime;
-    if (nonce !== nonceStorage && nonce > 0) {
-      settings.dataStore.set(id, nonce);
-      nonceStorage = nonce;
-    };
-  });    
-}
-
-ResumePlayback.prototype.init = function () {
-  if ((var resumeAt = this.options.dataStore.get(id))) {
-
-    // Pre-resume callback.
-    if (this.options.resuming) {
-      this.options.resuming(this.element, resumeAt);
-    }
-
-    var bindEvents = 'canplaythrough play';
-
-    // When the page loads, depending on the device the canplay event may
-    // fire.  If it does then we set the playhead position.  If it doesn't
-    // we set the playhead position the first time it plays.  In either
-    // case we immediately unbind this event, as this is a one time thing.
-    var initialResumePlayhead = function (e) {
-      var time = e.target.currentTime;
-      e.target.currentTime = resumeAt;
-      this.element.unbind(bindEvents, initialResumePlayhead);
-      
-      // Post resume callback.
-      if (this.options.resumed) {
-        this.options.resumed(this.element, resumeAt);
-      }
-    };
-    
-    this.element.bind(bindEvents, initialResumePlayhead);
-  }
-};
-
-$.fn.resumePlayback = function(id, options) {
-  return this.each(function () {
-    if (!$.data(this, 'plugin_resumePlayback')) {
-      $.data(this, 'plugin_resumePlayback', 
-      new ResumePlayback(this, id, options));
-    }
-  });
-};
-
-$.fn.resumePlayback.defaults = {
-  'refresh'           : 1000,
-  'resuming'          : null,
-  'resumed'           : null,
-  'dataStore'         : dataStoreCookies,
-  'dataStoreKey'      : 'resumePlayback',
-  'dataLifetime'      : 365
-  
-  // A prefix for all css classes
-  "cssPrefix"         : 'resume-playback'  
-};
-
-$.fn.resumePlayback.global = {};
-
-$.fn.resumePlayback.somePublicMethod  = function () {
-
-};
-
 /**
  * Default data storage uses native browser cookies.
  *
- * We use a single cooked with the name settings.dataStoreKey to store
+ * We use a single cooked with the name this.options.cookie to store
  * a json object.
  *
  * @type {Object}
  */
-var dataStoreCookies = {
+var DataStoreCookies = {
+  cookie: {
+    name: 'resumePlayback',
+    days: 365
+  },
 
   /**
    * Sets the value of name in persistent storage
@@ -134,15 +40,13 @@ var dataStoreCookies = {
     stored = JSON.stringify(stored);
 
     // No set just one cookies.
-    var name = settings.dataStoreKey;
-    var days = settings.dataLifetime;
-    if (days) {
+    if (this.cookie.days) {
       var date = new Date();
-      date.setTime(date.getTime()+(days*24*60*60*1000));
+      date.setTime(date.getTime()+(this.cookie.days*24*60*60*1000));
       var expires = "; expires="+date.toGMTString();
     }
     else var expires = "";
-    document.cookie = name+"="+stored+expires+"; path=/";    
+    document.cookie = this.cookie.name+"="+stored+expires+"; path=/";    
   },
 
   /**
@@ -155,7 +59,7 @@ var dataStoreCookies = {
    */
   get: function(name) {
     var value = 0;
-    var nameEQ = settings.dataStoreKey + "=";
+    var nameEQ = this.cookie.name + "=";
     var ca = document.cookie.split(';');
     for(var i=0;i < ca.length;i++) {
       var c = ca[i];
@@ -171,10 +75,88 @@ var dataStoreCookies = {
     };
 
     var value = typeof raw[name] === 'undefined' ? 0 : raw[name];
-
     return value;
-  },
-}   
+  }
+}
+
+// The actual plugin constructor
+function ResumePlayback(element, id, options) {
+  this.element = $(element);
+  this.id = id;
+  this.options = $.extend( {}, $.fn.resumePlayback.defaults, options);
+
+  // Localize the name and days of our data store
+  this.options.dataStore.cookie.name = this.options.cookie.name;
+  this.options.dataStore.cookie.days = this.options.cookie.days;
+  
+  this.init();
+
+  var nonceStorage = null;
+  var dataStore = this.options.dataStore;
+
+  /**
+   * Event handler for various video events: captures playhead position.
+   *
+   * @param  {object} e The event object.
+   */
+  this.element.bind('play seeked pause abort timeupdate', function (e) {
+    var nonce = e.target.currentTime;
+    if (nonce !== nonceStorage && nonce > 0) {
+      dataStore.set(id, nonce);
+      nonceStorage = nonce;
+    };
+  });    
+}
+
+ResumePlayback.prototype.init = function () {
+  var bindEvents  = 'canplaythrough play';
+  var $player     = this.element;
+  var options     = this.options;
+  var resumeAt    = this.options.dataStore.get(this.id);
+  if (resumeAt) {
+
+    // Pre-resume callback.
+    if (this.options.resuming) {
+      this.options.resuming(this.element, resumeAt);
+    }
+
+    // When the page loads, depending on the device the canplay event may
+    // fire.  If it does then we set the playhead position.  If it doesn't
+    // we set the playhead position the first time it plays.  In either
+    // case we immediately unbind this event, as this is a one time thing.
+    var initialResumePlayhead = function (e) {
+      var time = e.target.currentTime;
+      e.target.currentTime = resumeAt;
+      $player.unbind(bindEvents, initialResumePlayhead);
+      
+      // Post resume callback.
+      if (options.resumed) {
+        options.resumed(this.element, resumeAt);
+      }
+    };
+    
+    $player.bind(bindEvents, initialResumePlayhead);
+  }
+};
+
+$.fn.resumePlayback = function(id, options) {
+  return this.each(function () {
+    if (!$.data(this, 'plugin_resumePlayback')) {
+      $.data(this, 'plugin_resumePlayback', 
+      new ResumePlayback(this, id, options));
+    }
+  });
+};
+
+$.fn.resumePlayback.defaults = {
+  'resuming'          : null,
+  'resumed'           : null,
+  'cookie'            : {name: 'resumePlayback', days: 365},
+  'dataStore'         : DataStoreCookies,
+  
+  // A prefix for all css classes
+  "cssPrefix"         : 'resume-playback'  
+};
 
 $.fn.resumePlayback.version = function() { return '0.1.2'; };
 
