@@ -4,10 +4,10 @@
  *
  * HTML5 Media Resume Playback (Playhead Position Memory)
  *
- * Copyright 2013, Aaron Klump
- * Dual licensed under the MIT or GPL Version 2 licenses.
+ * Copyright 2013-2016, Aaron Klump <sourcecode@intheloftstudios.com>
+ * @license Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Fri May  6 17:19:08 PDT 2016
+ * Date: Fri May  6 17:31:35 PDT 2016
  */
 ;(function ($, window, document, undefined) {
   "use strict";
@@ -105,7 +105,8 @@
       if (nonce !== nonceStorage && nonce > 0) {
         dataStore.set(id, nonce);
         nonceStorage = nonce;
-      };
+      }
+      ;
     });
 
     return _;
@@ -165,7 +166,7 @@
   };
 
   $.fn.resumePlayback.version = function () {
-    return '0.1.3';
+    return '0.1.4'
   };
 
 })(jQuery, window, document);

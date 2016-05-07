@@ -8,15 +8,17 @@
  * Be sure to replace the $source_file with the correct filename
  */
 
-//Here is the header required to use this script...
+// Here is the header required to use this script...
+// Additional comments should come AFTER the date line.
+
 /**
- * {{ name }} jQuery JavaScript Plugin v{{ version }}
+ * {{ name }} JavaScript Module v{{ version }}
  * {{ homepage }}
  *
  * {{ description }}.
  *
- * Copyright 2013, {{ name }}
- * Dual licensed under the MIT or GPL Version 2 licenses.
+ * Copyright 2013, {{ author }}
+ * @license Dual licensed under the MIT or GPL Version 2 licenses.
  *
  * Date: {{ date }}
  */
@@ -40,27 +42,24 @@ list(
 $source_file = $path_to_root . '/jquery.resume_playback.js';
 $source = file_get_contents($source_file);
 
-// Pull out only comment lines for manipulation to protect code.
-preg_match_all("/(\/| )?\*.*$/m", $source, $matches);
-
-// Find all of the header comment
-$comment_lines = array();
-foreach ($matches[0] as $line_value) {
-  $comment_lines[] = $line_value;
-  if (preg_match('/\s*\*\//', $line_value)) {
-    break;
-  }
+// We're expected an initial comment block for the file.
+if (substr($source, 0, 3) !== '/**') {
+  throw new Exception("Unable to parse $source_file; file must begin with /**", 1);
 }
-$comment_lines_replace = $comment_lines;
+
+// Pull out only comment lines for manipulation to protect code.
+preg_match_all("/(\/\*\*).+?(\*\/)/s", $source, $matches);
+$find = $matches[0][0];
+$comment_lines_replace = explode(PHP_EOL, $matches[0][0]);
 
 // Target each comment line based on convention
 js_replace_name_version($comment_lines_replace[1], $package_name, $new_version);
 js_replace_homepage($comment_lines_replace[2], $homepage);
 js_replace_description($comment_lines_replace[4], $description);
+js_replace_copyright($comment_lines_replace[6], $author);
 js_replace_date($comment_lines_replace[9], $date);
 
 // Replace the old comment block with new one.
-$find     = implode(PHP_EOL, $comment_lines);
 $replace  = implode(PHP_EOL, $comment_lines_replace);
 $source   = str_replace($find, $replace, $source);
 
